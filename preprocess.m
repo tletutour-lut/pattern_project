@@ -1,4 +1,5 @@
-trainpath="/home/tom/Documents/LUT/Pattern_Recog/digits_3d_training_data/digits_3d/training_data/";
+trainpath="/home/tom/Documents/LUT/Pattern_Recog/1st_period/digits_3d_training_data/digits_3d/training_data/";
+recpath="/home/tom/Documents/LUT/project/pattern_project"
 recepdir="/preprocessed/"
 allCSVs = dir(fullfile(trainpath,'*.csv'));
 for c=1:length(allCSVs)
@@ -6,10 +7,33 @@ for c=1:length(allCSVs)
     currentfile=allCSVs(c);
     f=load(fullfile(trainpath,currentfile.name));
     r=flatten(f);
-    imwrite(r, strcat(fullfile(trainpath,recepdir,currentfile.name),'.png'));
+    r=standardize(r,'b')
+    imwrite(r, strcat(fullfile(recpath,recepdir,currentfile.name),'.png'));
     
 end
-
+function s=standardize(img, mode)
+    %Standardizes the image in one of the predefined modes :
+    %'b'inary :  the intensity is >1, new intensity is 1 at said pixel 
+    %'m'inmax scaling : fetching the max and min of intensity to perform
+    %pixelwise minmax scaling
+    X=size(img,1);
+    Y=size(img,2);
+    if mode=='b'
+        for x=1:X
+            for y=1:Y
+                if img(x,y)>=1
+                    img(x,y)=1;
+                end
+            end
+        end
+    end
+    if mode=='m'
+        M=max(img(:))
+        m=min(img(:))
+        img=(img-m)/(M-m);
+    end
+    s=img;
+end
 function recep_img_2d=flatten(pos)
     %We will find max and min along each dimension to represent the digit in a 
     %3d array
