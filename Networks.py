@@ -11,10 +11,20 @@ from torch import nn
 import torch.nn.functional as func
 
 
-class Lin3Net(nn.Module):
+
+class Lin1Net(nn.Module):
+    def __init__(self):
+        super(Lin1Net, self).__init__() 
+        self.fc1=nn.Linear(10*10,10)
+    def forward(self,x):
+        x=x.view(-1,10*10)   
+        return torch.sigmoid(x)
+
+
+class Lin4Net(nn.Module):
     
     def __init__(self):
-        super(Lin3Net, self).__init__() 
+        super(Lin4Net, self).__init__() 
         self.fc1=nn.Linear(10*10,200)
         self.fc2=nn.Linear(200,200)
         self.fc3=nn.Linear(200,100)

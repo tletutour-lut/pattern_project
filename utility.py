@@ -12,20 +12,23 @@ from torchvision import transforms
 
 def get_repartition(classes):
     rep=torch.zeros(10)
-    L=len(classes)
+    L=classes.size()[0]
     for c in range(10):
         count=0
         for l in range(L):
-            if classes(l)==c:
+            if classes[l]==c:
                 count+=1
-        rep[c]=count/L
+        rep[c]=count/L*100
     return rep
         
 def get_class(filename):
     return int(filename[7])
 
-def load_data(path):
-    files=sorted(os.listdir(path))
+def load_data(path,sort=True):
+    if sort:
+        files=sorted(os.listdir(path))
+    else:
+        files=os.listdir(path)
     #First we initialize the tensors holding classes and images, knowing that there are
     #1000 10x10 pixels images
     #Because the net will just return us a tensor of probability
@@ -49,31 +52,56 @@ def load_data(path):
         i+=1
     return target,classes,images
 
-def get_good_batches(path,batch_nb,train):
+def get_good_batches(path,batch_size,train):
     """
     We split the data into n batches with equal repartition of classes to prevent the lossfuntion
-    to increase because it discovers another class. This method also should take into account that
+    to increase because it discovers another class.
+    TODO This method also should take into account that
     the last batch can be smaller
     """
-    reg_batch_size=train//batch_nb
+    batch_nb=train//batch_size
     #We determine the nb of representants of a class there should be per batch
-    nb_in_class=reg_batch_size//10
-    last_batch_size=0
+    nb_in_class=batch_size//10
     class_last_ind=torch.zeros(10)
-    """
-    Since the samples are in numerical order and there is 100 of it 
-    we are sure of the position of the samples
-    """
-    if train%batch_size!=0:
-        reg_batches-=1
-        last_batch_size=train%batch_size
-        
-    for n in range(reg_batches):
-        for c in range(10):
-            
-    
-    
     _,classes,images=load_data(path)
     data_list=[]
     class_list=[]
-    return data_list,class_list
+    """
+    Since the samples are in numerical order and there is 100 of it 
+    we are sure of the class of the position of the samples
+    """
+    for n in range(batch_nb):
+        print("batch nb",n)
+        batch=torch.zeros(batch_size,1,10,10)
+        batch_class=torch.zeros(batch_size,dtype=torch.long)
+        k=0
+        for c in range(10):
+            print("class",c)
+            for b in range(nb_in_class):
+                
+                index=100*c+int(class_last_ind[c])
+                batch[k,:,:,:]=images[index,:,:,:]
+                batch_class[k]=classes[index]
+                class_last_ind[c]+=1
+                k+=1
+        data_list.append(batch)
+        class_list.append(batch_class)
+        print(get_repartition(batch_class))
+        
+    """
+    We also define the test set
+    """
+    test=1000-train
+    nb_in_test=test//10
+    test_set=torch.zeros(test,1,10,10)
+    test_class=torch.zeros(test,dtype=torch.long)
+    k=0
+    for c in range(10):
+        for b in range(nb_in_test):
+            index=100*c+int(class_last_ind[c])
+            test_set[k,:,:,:]=images[index,:,:,:]
+            test_class[k]=classes[index]
+            class_last_ind[c]+=1
+            k+=1
+    
+    return data_list,class_list, test_set,test_class
