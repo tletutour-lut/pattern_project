@@ -18,12 +18,12 @@ _,classes,images=load_data(data_path)
 #First lets differentiate the training and testing data
 #Let's separate the training data into mini batches of 50
 train=950
-epochs=10
+epochs=20
 batch_size=25
 #We initialize the net as well as the loss criterion & the opti 
-net=Lin1Net()
+net=Lin4Net()
 criterion= nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.7)
+optimizer = optim.SGD(net.parameters(), lr=0.5)
 if(train%batch_size!=0):
     exit("train should be a perfect multiple of batch_size")
     nb_batch=train//batch_size
@@ -49,7 +49,7 @@ for e in range(epochs):
         loss = criterion(outs,classes_b)
         loss.backward(retain_graph=True)
         optimizer.step()
-        #print("epoch",e+1,"batch",i+1,"loss",loss)
+        print("epoch",e+1,"batch",i+1,"loss",loss)
 
 
 

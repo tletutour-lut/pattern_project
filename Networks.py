@@ -26,8 +26,8 @@ class Lin4Net(nn.Module):
     def __init__(self):
         super(Lin4Net, self).__init__() 
         self.fc1=nn.Linear(10*10,200)
-        self.fc2=nn.Linear(200,200)
-        self.fc3=nn.Linear(200,100)
+        self.fc2=nn.Linear(200,300)
+        self.fc3=nn.Linear(300,100)
         self.fc4=nn.Linear(100,10)
 
         

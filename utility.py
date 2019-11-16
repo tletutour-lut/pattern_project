@@ -9,7 +9,12 @@ import torch
 import os
 from PIL import Image
 from torchvision import transforms
+import matplotlib as plt
 
+
+
+def plot_loss_func(loss_array):
+    pass
 def get_repartition(classes):
     rep=torch.zeros(10)
     L=classes.size()[0]
@@ -84,9 +89,10 @@ def get_good_batches(path,batch_size,train):
                 batch_class[k]=classes[index]
                 class_last_ind[c]+=1
                 k+=1
+            #print("class last ind=",class_last_ind[c])
         data_list.append(batch)
         class_list.append(batch_class)
-        print(get_repartition(batch_class))
+        #print(get_repartition(batch_class))
         
     """
     We also define the test set
