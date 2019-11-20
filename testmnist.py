@@ -73,20 +73,22 @@ class Network(nn.Module):
         super(Network, self).__init__()
         #self.conv1=nn.Conv2d(1,6,5)
         #self.conv2=nn.Conv2d(6,16,5) 
-        self.fc1=nn.Linear(10*10,200)
-        self.fc2=nn.Linear(200,200)
-        self.fc3=nn.Linear(200,100)
-        self.fc4=nn.Linear(100,10)
+        self.input=nn.Linear(10*10,200)
+        self.hidden1=nn.Linear(200,200)
+        self.hidden2=nn.Linear(200,200)
+        self.hidden3=nn.Linear(200,200)
+        self.output=nn.Linear(200,10)
 
         
     def forward(self,x):
         #x = func.max_pool2d(func.relu(self.conv1(x)), (2, 2))
         #x = func.max_pool2d(func.relu(self.conv2(x)), 2)
         x=x.view(-1,10*10)
-        x=func.relu(self.fc1(x))
-        x=func.relu(self.fc2(x))
-        x=func.relu(self.fc3(x))
-        x=self.fc4(x)
+        x=func.relu(self.input(x))
+        x=func.relu(self.hidden1(x))
+        x=func.relu(self.hidden2(x))
+        x=func.relu(self.hidden3(x))
+        x=self.output(x)
         return x
     
 

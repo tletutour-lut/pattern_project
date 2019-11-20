@@ -5,25 +5,26 @@ Created on Thu Nov 14 10:28:19 2019
 
 @author: tom
 """
-from Networks import Lin4Net,Conv2Lin3,Lin1Net
+from Networks import Lin4Net,Conv2Lin3,Lin1Net,NetworkTest
 import torch.optim as optim
 from utility import load_data, get_good_batches
+import matplotlib.pyplot as plt
 from torch import nn
 from sklearn.metrics import confusion_matrix
 import torch
 
 data_path="/home/tom/Documents/LUT/project/pattern_project/preprocessed/"
 
-_,classes,images=load_data(data_path)
+target,classes,images=load_data(data_path)
 #First lets differentiate the training and testing data
 #Let's separate the training data into mini batches of 50
-train=950
-epochs=20
+train=500
+epochs=50
 batch_size=25
 #We initialize the net as well as the loss criterion & the opti 
-net=Lin4Net()
+net=NetworkTest()
 criterion= nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.5)
+optimizer = optim.SGD(net.parameters(), lr=0.1)
 if(train%batch_size!=0):
     exit("train should be a perfect multiple of batch_size")
     nb_batch=train//batch_size
@@ -31,8 +32,10 @@ if(train%batch_size!=0):
     
 batch_list,class_list,test_set,test_class=get_good_batches(data_path,batch_size,train)
 
-
-for e in range(epochs):
+losslist=[]
+e=0
+loss_value=10000
+while(e<epochs):
 
     for i in range(len(batch_list)):
         batch=batch_list[i]
@@ -47,10 +50,14 @@ for e in range(epochs):
         optimizer.zero_grad() 
 
         loss = criterion(outs,classes_b)
+        if(i==0):
+            #We plot at every epoch
+            losslist.append(loss.item())
         loss.backward(retain_graph=True)
         optimizer.step()
-        print("epoch",e+1,"batch",i+1,"loss",loss)
-
+        loss_value=loss.item()
+        print("epoch",e+1,"batch",i+1,"loss",loss.item())
+    e+=1
 
 
 #We can now test our network
@@ -77,3 +84,4 @@ print(confusion_matrix(test_class,guesses))
 perc_err=errors/(1000-train)
 acc=(1-perc_err)*100
 print("accuracy :",acc,"%")
+plt.plot(range(e),losslist)

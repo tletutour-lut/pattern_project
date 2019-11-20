@@ -57,17 +57,19 @@ def load_data(path,sort=True):
         i+=1
     return target,classes,images
 
-def get_good_batches(path,batch_size,train):
+def get_good_batches(path,batch_size,train,start=0):
     """
     We split the data into n batches with equal repartition of classes to prevent the lossfuntion
     to increase because it discovers another class.
     TODO This method also should take into account that
     the last batch can be smaller
+    
+    the start value is used for k fold
     """
     batch_nb=train//batch_size
     #We determine the nb of representants of a class there should be per batch
     nb_in_class=batch_size//10
-    class_last_ind=torch.zeros(10)
+    class_last_ind=torch.ones(10)*start
     _,classes,images=load_data(path)
     data_list=[]
     class_list=[]

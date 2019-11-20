@@ -17,10 +17,37 @@ class Lin1Net(nn.Module):
         super(Lin1Net, self).__init__() 
         self.fc1=nn.Linear(10*10,10)
     def forward(self,x):
-        x=x.view(-1,10*10)   
+        x=x.view(-1,10*10)
+        x=self.fc1(x)
         return torch.sigmoid(x)
 
 
+
+
+class NetworkTest(nn.Module):
+    
+    def __init__(self):
+        super(NetworkTest, self).__init__()
+        #self.conv1=nn.Conv2d(1,6,5)
+        #self.conv2=nn.Conv2d(6,16,5) 
+        self.input=nn.Linear(10*10,200)
+        self.hidden1=nn.Linear(200,200)
+        self.hidden2=nn.Linear(200,200)
+        self.hidden3=nn.Linear(200,200)
+        self.output=nn.Linear(200,10)
+
+        
+    def forward(self,x):
+        #x = func.max_pool2d(func.relu(self.conv1(x)), (2, 2))
+        #x = func.max_pool2d(func.relu(self.conv2(x)), 2)
+        x=x.view(-1,10*10)
+        x=func.relu(self.input(x))
+        x=func.relu(self.hidden1(x))
+        x=func.relu(self.hidden2(x))
+        x=func.relu(self.hidden3(x))
+        x=self.output(x)
+        return x
+    
 class Lin4Net(nn.Module):
     
     def __init__(self):
