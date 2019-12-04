@@ -10,11 +10,8 @@ import os
 from PIL import Image
 from torchvision import transforms
 import matplotlib as plt
+import torch.optim as optim
 
-
-
-def plot_loss_func(loss_array):
-    pass
 def get_repartition(classes):
     rep=torch.zeros(10)
     L=classes.size()[0]
@@ -39,7 +36,7 @@ def load_data(path,sort=True):
     #Because the net will just return us a tensor of probability
     #We need to make  somethng that looks like it
     #We will call it target
-    images=torch.zeros(1000,1,10,10)
+    images=torch.zeros(1000,1,8,8)
     target=torch.zeros(1000,10)
     classes=torch.zeros(1000,dtype=torch.long)
     i=0
@@ -56,6 +53,7 @@ def load_data(path,sort=True):
         classes[i]=get_class(file)
         i+=1
     return target,classes,images
+
 
 def get_good_batches(path,batch_size,train,start=0):
     """
@@ -78,14 +76,11 @@ def get_good_batches(path,batch_size,train,start=0):
     we are sure of the class of the position of the samples
     """
     for n in range(batch_nb):
-        print("batch nb",n)
-        batch=torch.zeros(batch_size,1,10,10)
+        batch=torch.zeros(batch_size,1,8,8)
         batch_class=torch.zeros(batch_size,dtype=torch.long)
         k=0
         for c in range(10):
-            print("class",c)
             for b in range(nb_in_class):
-                
                 index=100*c+int(class_last_ind[c])
                 batch[k,:,:,:]=images[index,:,:,:]
                 batch_class[k]=classes[index]
@@ -101,7 +96,7 @@ def get_good_batches(path,batch_size,train,start=0):
     """
     test=1000-train
     nb_in_test=test//10
-    test_set=torch.zeros(test,1,10,10)
+    test_set=torch.zeros(test,1,8,8)
     test_class=torch.zeros(test,dtype=torch.long)
     k=0
     for c in range(10):

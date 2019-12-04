@@ -1,87 +1,87 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Nov 14 10:28:19 2019
-
-@author: tom
-"""
-from Networks import Lin4Net,Conv2Lin3,Lin1Net,NetworkTest
-import torch.optim as optim
-from utility import load_data, get_good_batches
-import matplotlib.pyplot as plt
-from torch import nn
-from sklearn.metrics import confusion_matrix
+import csv
+import os
+from utility import get_good_batches
+from Networks import Hidden1 
+import torch.nn.functional as func
 import torch
+from torch import nn
+import torch.optim as optim
+import time
 
-data_path="/home/tom/Documents/LUT/project/pattern_project/preprocessed/"
+path=os.path.join(os.getcwd(),"preprocessed")
 
-target,classes,images=load_data(data_path)
-#First lets differentiate the training and testing data
-#Let's separate the training data into mini batches of 50
-train=500
-epochs=50
-batch_size=25
-#We initialize the net as well as the loss criterion & the opti 
-net=NetworkTest()
-criterion= nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.1)
-if(train%batch_size!=0):
-    exit("train should be a perfect multiple of batch_size")
-    nb_batch=train//batch_size
-    
-    
-batch_list,class_list,test_set,test_class=get_good_batches(data_path,batch_size,train)
 
-losslist=[]
-e=0
-loss_value=10000
-while(e<epochs):
+max_epochs=100
 
-    for i in range(len(batch_list)):
-        batch=batch_list[i]
-        classes_b=class_list[i]
-        out_classes=torch.zeros(batch_size)
-        outs=torch.zeros(batch_size,10)
-        for k in range(batch_size):
-            out=net(batch[k,0,:,:])
-            outs[k]=out
-            out_classes[k]=out[0,:].max(0)[1]
+nets=[Hidden1(100),Hidden1(80),Hidden1(1000)]
+training=[300,500,700,800,900]
+batch_sizes=[100,50,25,20]
+#activations=[torch.sigmoid(),torch.relu()]
+losses=[nn.CrossEntropyLoss()]
+optims=[optim.SGD(nets[1].parameters(), lr=0.1)]
+criterion=nn.CrossEntropyLoss()
+
+#Below code is testing a lot of parameters of the networks(architecture, 
+#batch size, amount of training samples,activation functions, loss function and
+#optimisation of gradient descent)
+for n in nets:
+    for t in training:
+        for b in batch_sizes:
+                for l in losses:
+                    for o in optims:
+                        print("training",t,"batch size",b)
+                        #We load the data in batches
+                        data_list,class_list, test_set,test_class=get_good_batches(path,b,t)
+                        #Let's train the network
+                        thisnet=n
+                        loss_f=l
+                        o=optim.SGD(n.parameters(), lr=0.1)
+                        #nb of epochs
+                        e=0
+                        #If loss doesn't move anymore, we stop training
+                        old_loss=10000
+                        convergence=False
+                        while(e<max_epochs and convergence==False):
+                            e+=1
+                            for i in range(len(data_list)):
+                                batch=data_list[i]
+                                classes=class_list[i]
+                                outs=torch.zeros(b,10)
+                                for k in range(b):
+                                    outs[k,:]=n(batch[k,0,:,:])
+                                o.zero_grad() 
         
-        optimizer.zero_grad() 
-
-        loss = criterion(outs,classes_b)
-        if(i==0):
-            #We plot at every epoch
-            losslist.append(loss.item())
-        loss.backward(retain_graph=True)
-        optimizer.step()
-        loss_value=loss.item()
-        print("epoch",e+1,"batch",i+1,"loss",loss.item())
-    e+=1
-
-
-#We can now test our network
-outtest=torch.zeros(1000-train,10)
-guesses=torch.zeros(1000-train)
-errors=0
-
-for k in range(1000-train):
-        outtest[k,:]=net(test_set[k,:,:,:])
-        #Now we have to compare with the actual truth
-        #Essentially if max of outtest[k-train,:]is at the same index
-        #than max target(k,:) classification is correct
-        #else error+1
-        guesses[k]=outtest[k,:].max(0)[1]
-        if int(guesses[k])==int(test_class[k]):
-            #print("hueeeee")
-            pass
-        else:
-            errors+=1
-print("errors=",errors)
-print(confusion_matrix(test_class,guesses))
-#Let us define a measure of accuracy
-#First the percentage of error amongst the test set
-perc_err=errors/(1000-train)
-acc=(1-perc_err)*100
-print("accuracy :",acc,"%")
-plt.plot(range(e),losslist)
+                                loss = criterion(outs,classes)
+                                loss.backward()
+                                o.step()
+                                
+                                if abs(loss.item())<0.00001:
+                                    print("loss is very small")
+                                    convergence=True
+                                    break
+                                if abs(loss.item()-old_loss)<0.0001:
+                                    print("loss does not move")
+                                    convergence=True
+                                    break
+                                old_loss=loss.item()
+                            if convergence:
+                                print("convergence condition reached after",e,"epochs")
+                                break
+                        if(convergence==False):
+                            print("training done, no convergence")
+                        #We will now validate the network
+                        errors=0
+                        for k in range(1000-t):
+                            output=n(test_set[k,0,:,:])
+                            predicted_class=output[0,:].max(0)[1]
+                            if predicted_class==test_class[k]:
+                                pass
+                            else:
+                                errors+=1
+                        print("errors",errors)
+                        perc_err=errors/(1000-t)
+                        acc=(1-perc_err)*100
+                        print("accuracy",acc)
+def train_in_full(net,data,classes,activation,loss):
+    pass
+    
