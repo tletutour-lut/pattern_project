@@ -12,7 +12,53 @@ from torchvision import transforms
 import matplotlib as plt
 import torch.optim as optim
 
+def kfold_lists(path,K):
+    """
+    this method spits out data, classes and target lists for to implement cross
+    validation, unfortunately I don't have time to make it with equal class repartition
+    loss will be bumpy, but cross validation is important
+    1000 has to be a multiple of K, it could work without but no time for this
+    """
+    
+    target,classes,images=load_data(path,sort=False)
+    if(1000%K!=0):
+        exit("1000 has to be a multiple of K")
+    fold_size=1000//K
+    target_list=[]
+    classes_list=[]
+    images_list=[]
+    for n in range(K):
+        target_list.append(target[n:n+fold_size,:])
+        classes_list.append(classes[n:n+fold_size])
+        images_list.append(images[n:n+fold_size,:,:,:])
+        
+    return target_list,classes_list, images_list
+
+def split_in_batches(target,classes, images,batch_size):
+    N=len(target)
+    nb_batches=N//batch_size
+    b_t_l=[]
+    b_c_l=[]
+    b_i_l=[]
+    little_batch_size=N%batch_size
+    if(little_batch_size!=0):
+        b_t_l.append(target[0:little_batch_size,:])
+        b_c_l.append(classes[0:little_batch_size])
+        b_i_l.append(images[0:little_batch_size,:,:,:])
+    for i in range(nb_batches):
+        b_t_l.append(target[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size,:])
+        b_c_l.append(classes[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size])
+        b_i_l.append(images[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size,:,:,:])
+        
+    return b_t_l,b_c_l,b_i_l
+    
+    
 def get_repartition(classes):
+    """
+    I made this method when I noticed that the loss was "bumpy", and wanted to 
+    test the hypothesis that due to the randomness of the class distribution
+    it is just a testing method, doesn't do anything for the training
+    """
     rep=torch.zeros(10)
     L=classes.size()[0]
     for c in range(10):
@@ -27,6 +73,10 @@ def get_class(filename):
     return int(filename[7])
 
 def load_data(path,sort=True):
+    """
+    Loads the data, target, and classes from the PNG images
+    sorted means that the data will be in class order, ie. 00000....1111 etc
+    """
     if sort:
         files=sorted(os.listdir(path))
     else:
