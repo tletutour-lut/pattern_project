@@ -1,50 +1,32 @@
+%You should change the paths below to your convenience : 
+%You can have the unprocessed data anywhere, but put the directory in
+%trainpath
+%When running the script do not just add the file to path,  but change the
+%matlab path to the root dir of the project. Otherwise the python code
+%might not work (configured to 
 trainpath="/home/tom/Documents/LUT/Pattern_Recog/1st_period/digits_3d_training_data/digits_3d/training_data/";
-recpath="/home/tom/Documents/LUT/project/pattern_project"
+recpath=pwd
 recepdir="/preprocessed/"
 allCSVs = dir(fullfile(trainpath,'*.csv'));
 %Dimensional resolution of the created images
 res=8
+
 dataset=zeros(res,res,length(allCSVs));
+
 for c=1:length(allCSVs)
-    c
     currentfile=allCSVs(c);
     f=load(fullfile(trainpath,currentfile.name));
     r=flatten(f,res);
-    r=unitize(r);
+    r=standardize(r,'b')
     dataset(:,:,c)=r;
     imwrite(r, strcat(fullfile(recpath,recepdir,currentfile.name),'.png'));
     
 end
-% st=standardize_dataset(dataset);
-% for c=1:length(allCSVs)
-%     currentfile=allCSVs(c);
-%     imwrite(standardize(st(:,:,c),'m'), strcat(fullfile(recpath,recepdir,currentfile.name),'.png'));
-% end
-function st=standardize_dataset(dataset)
-    %the intensity is >1, new intensity is 1 at said pixel 
-    X=size(dataset,1);
-    Y=size(dataset,2);
-    N=size(dataset,3);
-    means=zeros(X,Y);
-    stds=zeros(X,Y);
-    for x=1:X
-        for y=1:Y
-            means(x,y)=mean(dataset(x,y,:))
-            stds(x,y)=std(dataset(x,y,:))
-        end
-    end
-    st=zeros(X,Y,N);
-    for n=1:N
-        st(:,:,n)=(dataset(:,:,n)-means)/stds;
-    end
-end
-function r=unitize(image)
-    image(image>=1)=1;
-    r=image;
-end
+
+
 function s=standardize(img, mode)
     %Standardizes the image in one of the predefined modes :
-    %'b'inary :  the intensity is >1, new intensity is 1 at said pixel 
+    %'b'inary :  the intensity is >=1, new intensity is 1 at said pixel 
     %'m'inmax scaling : fetching the max and min of intensity to perform
     %'a'verage and std normalization, first b is performed and then
     %pixelwise minmax scaling
@@ -67,10 +49,36 @@ function s=standardize(img, mode)
         m=min(img(:))
         img=(img-m)/(M-m);
     end
+    if mode=='a'
+        img=(img-mean(img(:)))./std(img(:))
+        
+    end
     s=img;
 end
 
+
+function C=digit_classify(data)
+    %This function predicts the class of the given 3*N matrix
+    %It trains the network in python over the whole training dataset a few
+    %times(until convergence or max epochs is reached
+    %First we will format the test data the same way we've formatted the
+    %train dataset
+    r=flatten(f,res);
+    r=standardize(r,'b');
+    %We store it in the current working directory for the python file to
+    %find it
+    path_test=strcat(pwd,'test.png')
+    imwrite(r, path_test);
+    C=py.main.predict_digit(path_test)
+end
+
+
 function recep_img_2d=flatten(pos,res)
+    %This function makes a 2d image from a N*3 matrix and
+    %res gives out the resolution of image
+    %eg. if res=8 the image will be 8*8 pixels
+    
+    
     %We will find max and min along each dimension to represent the digit in a 
     %3d array
     minx=min(pos(:,1));
