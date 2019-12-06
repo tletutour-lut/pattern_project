@@ -35,24 +35,37 @@ def kfold_lists(path,K):
     return target_list,classes_list, images_list
 
 def split_in_batches(target,classes, images,batch_size):
-    N=len(target)
-    nb_batches=N//batch_size
-    b_t_l=[]
-    b_c_l=[]
-    b_i_l=[]
-    little_batch_size=N%batch_size
-    if(little_batch_size!=0):
-        b_t_l.append(target[0:little_batch_size,:])
-        b_c_l.append(classes[0:little_batch_size])
-        b_i_l.append(images[0:little_batch_size,:,:,:])
-    for i in range(nb_batches):
-        b_t_l.append(target[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size,:])
-        b_c_l.append(classes[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size])
-        b_i_l.append(images[little_batch_size+i*batch_size:little_batch_size+(i+1)*batch_size,:,:,:])
-        
-    return b_t_l,b_c_l,b_i_l
-    
-    
+    N=classes.shape[0]
+    batch_nb=classes.shape[0]//batch_size
+    #We determine the nb of representants of a class there should be per batch
+    nb_in_class=batch_size//10
+    class_last_ind=torch.zeros(10)
+    image_list=[]
+    target_list=[]
+    class_list=[]
+    k=0
+    #We assume that the data is already ordered, which it will be because we 
+    #call this method after the ordered folds
+    for n in range(batch_nb):
+        batch_target=torch.zeros(batch_size,10)
+        batch_image=torch.zeros(batch_size,1,8,8)
+        batch_class=torch.zeros(batch_size,dtype=torch.long)
+        k=0
+        for c in range(10):
+            for b in range(nb_in_class):
+                index=(N//10)*c+int(class_last_ind[c])
+                batch_target[k,:]=target[index,:]
+                batch_image[k,:,:,:]=images[index,:,:,:]
+                batch_class[k]=classes[index]
+                class_last_ind[c]+=1
+                k+=1
+            #print("class last ind=",class_last_ind[c])
+        image_list.append(batch_image)
+        class_list.append(batch_class)
+        target_list.append(batch_target)
+        #print(get_repartition(batch_class))
+    return target_list,class_list,image_list
+
 def get_repartition(classes):
     """
     I made this method when I noticed that the loss was "bumpy", and wanted to 
@@ -68,7 +81,8 @@ def get_repartition(classes):
                 count+=1
         rep[c]=count/L*100
     return rep
-        
+
+
 def get_class(filename):
     return int(filename[7])
 
@@ -105,19 +119,56 @@ def load_data(path,sort=True):
     return target,classes,images
 
 
-def get_good_batches(path,batch_size,train,start=0):
+def get_good_folds(path,K):
     """
     We split the data into n batches with equal repartition of classes to prevent the lossfuntion
     to increase because it discovers another class.
     TODO This method also should take into account that
     the last batch can be smaller
+    """
+    fold_size=1000//K
+    #We determine the nb of representants of a class there should be per batch
+    nb_in_class=fold_size//10
+    class_last_ind=torch.zeros(10)
+    target,classes,images=load_data(path)
+    target_list=[]
+    data_list=[]
+    class_list=[]
+    """
+    Since the samples are in numerical order and there is 100 of it 
+    we are sure of the class of the position of the samples
+    """
+    for n in range(K):
+        fold_image=torch.zeros(fold_size,1,8,8)
+        fold_class=torch.zeros(fold_size,dtype=torch.long)
+        fold_target=torch.zeros(fold_size,10)
+        j=0
+        for c in range(10):
+            for b in range(nb_in_class):
+                index=100*c+int(class_last_ind[c])
+                fold_image[j,:,:,:]=images[index,:,:,:]
+                fold_target[j,:]=target[index,:]
+                fold_class[j]=classes[index]
+                class_last_ind[c]+=1
+                j+=1
+
+        data_list.append(fold_image)
+        target_list.append(fold_target)
+        class_list.append(fold_class)
     
-    the start value is used for k fold
+    return target_list, class_list,data_list
+
+def get_good_batches(path,batch_size,train):
+    """
+    We split the data into n batches with equal repartition of classes to prevent the lossfuntion
+    to increase because it discovers another class.
+    TODO This method also should take into account that
+    the last batch can be smaller
     """
     batch_nb=train//batch_size
     #We determine the nb of representants of a class there should be per batch
     nb_in_class=batch_size//10
-    class_last_ind=torch.ones(10)*start
+    class_last_ind=torch.zeros(10)
     _,classes,images=load_data(path)
     data_list=[]
     class_list=[]
