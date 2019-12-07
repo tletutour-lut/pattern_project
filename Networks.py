@@ -12,16 +12,6 @@ import torch.nn.functional as func
 
 
 
-class Lin1Net(nn.Module):
-    def __init__(self):
-        super(Lin1Net, self).__init__() 
-        self.fc1=nn.Linear(8*8,20)
-    def forward(self,x):
-        x=x.view(-1,8*8)
-        x=self.fc1(x)
-        return torch.relu(x)
-
-
 
 
 class NetworkTest(nn.Module):
@@ -53,31 +43,44 @@ class NetworkTest(nn.Module):
         return x
     
 class Hidden1(nn.Module):
-    def __init__(self,h):
+    def __init__(self,h,a):
         super(Hidden1, self).__init__() 
         self.hidden=nn.Linear(8*8,h)
         self.output=nn.Linear(h,10)
+        self.a=a
+        self.h=h
     def forward(self,x):
         x=x.view(-1,8*8)
-        x=torch.relu(self.hidden(x))
+        if self.a=='relu':   
+            x=torch.relu(self.hidden(x))
+        if self.a=='sigmoid':   
+            x=torch.sigmoid(self.hidden(x))
         return self.output(x)
+    
+    
 class Lin4Net(nn.Module):
     
-    def __init__(self):
+    def __init__(self,h,a):
         super(Lin4Net, self).__init__() 
-        self.fc1=nn.Linear(8*8,100)
-        self.fc2=nn.Linear(100,100)
-        self.fc3=nn.Linear(100,100)
-        self.fc4=nn.Linear(100,10)
-
+        self.fc1=nn.Linear(8*8,h)
+        self.fc2=nn.Linear(h,h)
+        self.fc3=nn.Linear(h,h)
+        self.fc4=nn.Linear(h,10)
+        self.a=a
+        self.h=h
         
     def forward(self,x):
         #x = func.max_pool2d(func.relu(self.conv1(x)), (2, 2))
         #x = func.max_pool2d(func.relu(self.conv2(x)), 2)
         x=x.view(-1,8*8)
-        x=torch.relu(self.fc1(x))
-        x=torch.relu(self.fc2(x))
-        x=torch.relu(self.fc3(x))
+        if self.a=='relu':   
+            x=torch.relu(self.fc1(x))
+            x=torch.relu(self.fc2(x))
+            x=torch.relu(self.fc3(x))
+        if self.a=='sigmoid':   
+            x=torch.sigmoid(self.fc1(x))
+            x=torch.sigmoid(self.fc2(x))
+            x=torch.sigmoid(self.fc3(x))
         x=self.fc4(x)
         return x
     
